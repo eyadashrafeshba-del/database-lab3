@@ -13,16 +13,16 @@ Bonus	Upload a cover image for each book and a photo for each author
 
 lab3-<student-id>/
 
-├── problem2_DDL.sql        # Problem 2: library database (AUTHOR, BOOK)
-├── problem2_DML.sql        # Problem 2: seed data (3 authors, 6 books)
-├── README.md
-└── website/
-    ├── app.py              # Flask routes
-    ├── db.py               # MySQL connection helpers
-    ├── requirements.txt
-    ├── .env.example        # copy to .env and fill in your password
-    ├── templates/          # HTML pages (Jinja2)
-    └── static/             # style.css and uploaded images
+ problem2_DDL.sql        # Problem 2: library database (AUTHOR, BOOK)
+ problem2_DML.sql        # Problem 2: seed data (3 authors, 6 books)
+ README.md
+ website/
+    app.py              # Flask routes
+    db.py               # MySQL connection helpers
+    requirements.txt
+    .env.example        # copy to .env and fill in your password
+    templates/          # HTML pages (Jinja2)
+    static/             # style.css and uploaded images
 
 🗄️ Database schema (Problem 2)
 AUTHOR (author_id, name, country, photo)
