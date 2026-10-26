@@ -1,0 +1,26 @@
+USE company;
+
+-- 1) Employees
+INSERT INTO employee (ssn, fname, lname, bdate, address, gender, salary, Dno) VALUES
+('123456789', 'John',   'Smith',  '1990-01-09', '731 Fondren, Houston',  'M', 30000.00, NULL),
+('333445555', 'Franklin','Wong',  '1985-12-08', '638 Voss, Houston',     'M', 40000.00, NULL),
+('999887777', 'Alicia', 'Zelaya', '1992-07-19', '3321 Castle, Spring',   'F', 25000.00, NULL),
+('888665555', 'James',  'Borg',   '1975-11-10', '450 Stone, Houston',    'M', 55000.00, NULL);
+
+-- 2) Departments
+INSERT INTO department (Dnumber, Dname, mgr_ssn, mgr_start_date) VALUES
+(1, 'Headquarters',   '888665555', '2015-06-19'),
+(4, 'Administration', '999887777', '2020-01-01'),
+(5, 'Research',       '333445555', '2018-05-22');
+
+-- 3) Updates
+UPDATE employee SET Dno = 5 WHERE ssn IN ('123456789', '333445555');
+UPDATE employee SET Dno = 4 WHERE ssn = '999887777';
+UPDATE employee SET Dno = 1 WHERE ssn = '888665555';
+
+-- 4) Projects
+INSERT INTO PROJECT (Pnumber, Pname, Plocation, Dno) VALUES
+(1,  'ProductX',      'Bellaire', 5),
+(2,  'ProductY',      'Sugarland',5),
+(10, 'Computerization','Stafford',4),
+(20, 'Reorganization','Houston',  1);

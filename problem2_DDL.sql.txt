@@ -1,0 +1,20 @@
+drop database if exists library;
+create database library;
+use library;
+
+create table author (
+    author_id  int          not null auto_increment,
+    name       varchar(50)  not null,
+    country    varchar(50),
+    primary key (author_id)
+);
+
+create table book (
+    book_id    int           not null auto_increment,
+    title      varchar(100)  not null,
+    price      decimal(10,2),
+    author_id  int           not null,
+    primary key (book_id),
+    foreign key (author_id) references author(author_id)
+        on delete cascade
+);
