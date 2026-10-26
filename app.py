@@ -45,7 +45,7 @@ def parse_price(text):
         price = Decimal(text.strip())
     except (InvalidOperation, AttributeError):
         return None
-    return price if price >= 0 else None
+    return price if price > 0 else None
 
 
 # ---------- home ----------
@@ -57,20 +57,20 @@ def index():
 # ---------- F2.1 show ----------
 @app.route("/books")
 def books():
-    rows = db.query("SELECT * FROM BOOK ORDER BY book_id")
+    rows = db.query("SELECT * FROM Book ORDER BY book_id")
     return render_template("books.html", books=rows)
 
 
 @app.route("/authors")
 def authors():
-    rows = db.query("SELECT * FROM AUTHOR ORDER BY author_id")
+    rows = db.query("SELECT * FROM Author ORDER BY author_id")
     return render_template("authors.html", authors=rows)
 
 
 # ---------- F2.2 add / F2.3 edit book ----------
 @app.route("/books/add", methods=["GET", "POST"])
 def add_book():
-    authors_list = db.query("SELECT author_id, name FROM AUTHOR ORDER BY name")
+    authors_list = db.query("SELECT author_id, name FROM Author ORDER BY name")
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         price = parse_price(request.form.get("price", ""))
@@ -82,9 +82,10 @@ def add_book():
         cover = save_image("cover")
         try:
             db.execute(
-                "INSERT INTO BOOK (title, price, author_id, cover) "
+                "INSERT INTO Book (title, price, author_id, image_url) "
                 "VALUES (%s, %s, %s, %s)", (title, price, int(author_id), cover))
         except MySQLError as e:
+            remove_image(cover)
             flash(f"Database error: {e.args[-1]}", "error")
             return render_template("book_form.html", book=request.form,
                                    authors=authors_list, mode="Add")
@@ -96,11 +97,11 @@ def add_book():
 
 @app.route("/books/<int:book_id>/edit", methods=["GET", "POST"])
 def edit_book(book_id):
-    book = db.query("SELECT * FROM BOOK WHERE book_id = %s", (book_id,), one=True)
+    book = db.query("SELECT * FROM Book WHERE book_id = %s", (book_id,), one=True)
     if not book:
         flash("Book not found.", "error")
         return redirect(url_for("books"))
-    authors_list = db.query("SELECT author_id, name FROM AUTHOR ORDER BY name")
+    authors_list = db.query("SELECT author_id, name FROM Author ORDER BY name")
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         price = parse_price(request.form.get("price", ""))
@@ -113,14 +114,15 @@ def edit_book(book_id):
         try:
             if cover:
                 db.execute(
-                    "UPDATE BOOK SET title=%s, price=%s, author_id=%s, cover=%s "
+                    "UPDATE Book SET title=%s, price=%s, author_id=%s, image_url=%s "
                     "WHERE book_id=%s", (title, price, int(author_id), cover, book_id))
-                remove_image(book["cover"])
+                remove_image(book["image_url"])
             else:
                 db.execute(
-                    "UPDATE BOOK SET title=%s, price=%s, author_id=%s "
+                    "UPDATE Book SET title=%s, price=%s, author_id=%s "
                     "WHERE book_id=%s", (title, price, int(author_id), book_id))
         except MySQLError as e:
+            remove_image(cover)
             flash(f"Database error: {e.args[-1]}", "error")
             return render_template("book_form.html", book={**book, **request.form},
                                    authors=authors_list, mode="Edit")
@@ -133,10 +135,14 @@ def edit_book(book_id):
 # ---------- F2.4 remove book ----------
 @app.route("/books/<int:book_id>/delete", methods=["POST"])
 def delete_book(book_id):
-    book = db.query("SELECT cover FROM BOOK WHERE book_id = %s", (book_id,), one=True)
+    book = db.query("SELECT image_url FROM Book WHERE book_id = %s", (book_id,), one=True)
     if book:
-        db.execute("DELETE FROM BOOK WHERE book_id = %s", (book_id,))
-        remove_image(book["cover"])
+        try:
+            db.execute("DELETE FROM Book WHERE book_id = %s", (book_id,))
+        except MySQLError as e:
+            flash(f"Database error: {e.args[-1]}", "error")
+            return redirect(url_for("books"))
+        remove_image(book["image_url"])
         flash("Book removed.", "ok")
     return redirect(url_for("books"))
 
@@ -146,14 +152,20 @@ def delete_book(book_id):
 def add_author():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
-        country = request.form.get("country", "").strip() or None
-        if not name:
-            flash("Author name is required.", "error")
+        country = request.form.get("country", "").strip()
+        if not name or not country:
+            flash("Author name and country are required.", "error")
             return render_template("author_form.html", author=request.form,
                                    mode="Add")
         photo = save_image("photo")
-        db.execute("INSERT INTO AUTHOR (name, country, photo) VALUES (%s, %s, %s)",
-                   (name, country, photo))
+        try:
+            db.execute("INSERT INTO Author (name, country, image_url) "
+                       "VALUES (%s, %s, %s)", (name, country, photo))
+        except MySQLError as e:
+            remove_image(photo)
+            flash(f"Database error: {e.args[-1]}", "error")
+            return render_template("author_form.html", author=request.form,
+                                   mode="Add")
         flash("Author added.", "ok")
         return redirect(url_for("authors"))
     return render_template("author_form.html", author={}, mode="Add")
@@ -161,26 +173,33 @@ def add_author():
 
 @app.route("/authors/<int:author_id>/edit", methods=["GET", "POST"])
 def edit_author(author_id):
-    author = db.query("SELECT * FROM AUTHOR WHERE author_id = %s", (author_id,),
+    author = db.query("SELECT * FROM Author WHERE author_id = %s", (author_id,),
                       one=True)
     if not author:
         flash("Author not found.", "error")
         return redirect(url_for("authors"))
     if request.method == "POST":
         name = request.form.get("name", "").strip()
-        country = request.form.get("country", "").strip() or None
-        if not name:
-            flash("Author name is required.", "error")
+        country = request.form.get("country", "").strip()
+        if not name or not country:
+            flash("Author name and country are required.", "error")
             return render_template("author_form.html",
                                    author={**author, **request.form}, mode="Edit")
         photo = save_image("photo")
-        if photo:
-            db.execute("UPDATE AUTHOR SET name=%s, country=%s, photo=%s "
-                       "WHERE author_id=%s", (name, country, photo, author_id))
-            remove_image(author["photo"])
-        else:
-            db.execute("UPDATE AUTHOR SET name=%s, country=%s WHERE author_id=%s",
-                       (name, country, author_id))
+        try:
+            if photo:
+                db.execute("UPDATE Author SET name=%s, country=%s, image_url=%s "
+                           "WHERE author_id=%s",
+                           (name, country, photo, author_id))
+                remove_image(author["image_url"])
+            else:
+                db.execute("UPDATE Author SET name=%s, country=%s "
+                           "WHERE author_id=%s", (name, country, author_id))
+        except MySQLError as e:
+            remove_image(photo)
+            flash(f"Database error: {e.args[-1]}", "error")
+            return render_template("author_form.html",
+                                   author={**author, **request.form}, mode="Edit")
         flash("Author updated.", "ok")
         return redirect(url_for("authors"))
     return render_template("author_form.html", author=author, mode="Edit")
@@ -189,15 +208,19 @@ def edit_author(author_id):
 # ---------- F2.5 remove author (books are deleted by ON DELETE CASCADE) ----------
 @app.route("/authors/<int:author_id>/delete", methods=["POST"])
 def delete_author(author_id):
-    author = db.query("SELECT photo FROM AUTHOR WHERE author_id = %s", (author_id,),
+    author = db.query("SELECT image_url FROM Author WHERE author_id = %s", (author_id,),
                       one=True)
     if author:
         # collect the covers of the books that the cascade is going to delete
-        covers = db.query("SELECT cover FROM BOOK WHERE author_id = %s", (author_id,))
-        db.execute("DELETE FROM AUTHOR WHERE author_id = %s", (author_id,))
-        remove_image(author["photo"])
+        covers = db.query("SELECT image_url FROM Book WHERE author_id = %s", (author_id,))
+        try:
+            db.execute("DELETE FROM Author WHERE author_id = %s", (author_id,))
+        except MySQLError as e:
+            flash(f"Database error: {e.args[-1]}", "error")
+            return redirect(url_for("authors"))
+        remove_image(author["image_url"])
         for c in covers:
-            remove_image(c["cover"])
+            remove_image(c["image_url"])
         flash("Author and all of their books removed.", "ok")
     return redirect(url_for("authors"))
 

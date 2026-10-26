@@ -7,7 +7,7 @@
   <tr><th>Cover</th><th>book_id</th><th>Title</th><th>Price</th><th>author_id</th><th>Actions</th></tr>
   {% for b in books %}
   <tr>
-    <td>{% if b.cover %}<img src="{{ url_for('static', filename='uploads/' ~ b.cover) }}" alt="cover">{% else %}-{% endif %}</td>
+    <td>{% if b.image_url %}<img src="{{ url_for('static', filename='uploads/' ~ b.image_url) }}" alt="cover">{% else %}-{% endif %}</td>
     <td>{{ b.book_id }}</td>
     <td>{{ b.title }}</td>
     <td>{{ '%.2f'|format(b.price) }}</td>

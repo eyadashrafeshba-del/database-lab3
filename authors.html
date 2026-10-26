@@ -7,7 +7,7 @@
   <tr><th>Photo</th><th>author_id</th><th>Name</th><th>Country</th><th>Actions</th></tr>
   {% for a in authors %}
   <tr>
-    <td>{% if a.photo %}<img src="{{ url_for('static', filename='uploads/' ~ a.photo) }}" alt="photo">{% else %}-{% endif %}</td>
+    <td>{% if a.image_url %}<img src="{{ url_for('static', filename='uploads/' ~ a.image_url) }}" alt="photo">{% else %}-{% endif %}</td>
     <td>{{ a.author_id }}</td>
     <td>{{ a.name }}</td>
     <td>{{ a.country or '' }}</td>

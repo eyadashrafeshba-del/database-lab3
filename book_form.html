@@ -4,7 +4,7 @@
 <h1>{{ mode }} book</h1>
 <form method="post" enctype="multipart/form-data">
   <label>Title <input name="title" value="{{ book.title or '' }}" required maxlength="150"></label>
-  <label>Price <input name="price" type="number" step="0.01" min="0" value="{{ book.price or '' }}" required></label>
+  <label>Price <input name="price" type="number" step="0.01" min="0.01" value="{{ book.price or '' }}" required></label>
   <label>Author
     <select name="author_id" required>
       <option value="">-- choose --</option>

@@ -3,8 +3,8 @@
 {% block content %}
 <h1>{{ mode }} author</h1>
 <form method="post" enctype="multipart/form-data">
-  <label>Name <input name="name" value="{{ author.name or '' }}" required maxlength="100"></label>
-  <label>Country <input name="country" value="{{ author.country or '' }}" maxlength="50"></label>
+  <label>Name <input name="name" value="{{ author.name or '' }}" required maxlength="150"></label>
+  <label>Country <input name="country" value="{{ author.country or '' }}" required maxlength="150"></label>
   <label>Photo (optional) <input type="file" name="photo" accept="image/*"></label>
   <button class="btn">Save</button>
   <a href="{{ url_for('authors') }}">Cancel</a>
