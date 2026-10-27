@@ -1,0 +1,84 @@
+Course: Introduction to Database Systems - Lab 3: Foreign Keys and Simple SQL
+Part II: Library Database & Web Application Documentation
+Team Members:
+  * Ezz Eldeen Gamal  (Student ID: 2304043)
+  * Eyad Ashraf       (Student ID: 2304113)
+****************************
+
+================================================================================
+SECTION A: Referential Integrity & Cascading Delete Design (problem2_DDL.sql)
+================================================================================
+
+In the Library database schema, the relationship between AUTHOR (one) and
+BOOK (many) is enforced via a foreign key constraint on the BOOK table:
+
+    CREATE TABLE AUTHOR (
+        author_id INT PRIMARY KEY,
+        name VARCHAR(50) NOT NULL,
+        country VARCHAR(50) NOT NULL
+    );
+
+    CREATE TABLE BOOK (
+        book_id INT PRIMARY KEY,
+        title VARCHAR(100) NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        author_id INT NOT NULL,
+        CONSTRAINT fk_book_author
+            FOREIGN KEY (author_id) REFERENCES AUTHOR(author_id)
+            ON DELETE CASCADE
+    );
+
+How ON DELETE CASCADE Works:
+Normally, MySQL prevents deleting a parent record in AUTHOR if child records
+in BOOK still point to its author_id (throwing Error 1451). By attaching
+the ON DELETE CASCADE rule to the foreign key, deleting an author from the
+AUTHOR table instructs the storage engine (InnoDB) to automatically locate
+and remove all dependent book records in the BOOK table that share the same
+author_id in a single atomic operation.
+
+
+================================================================================
+SECTION B: Implementation of Web Application Features (F2.1 to F2.5)
+================================================================================
+
+All web operations interact with MySQL using standard DML statements without
+complex joins or aggregations:
+
+[F2.1] Displaying Books and Authors
+  To populate the main interface tables, two separate retrieval queries are executed:
+  - Authors List:
+    SELECT author_id, name, country FROM AUTHOR;
+  - Books Catalog:
+    SELECT book_id, title, price, author_id FROM BOOK;
+
+[F2.2] Inserting a New Author or Book
+  - Adding an Author:
+    INSERT INTO AUTHOR (author_id, name, country)
+    VALUES (10, 'Taha Hussein', 'Egypt');
+
+  - Adding a Book:
+    INSERT INTO BOOK (book_id, title, price, author_id)
+    VALUES (501, 'The Days', 14.50, 10);
+    *Note: If the user supplies an author_id that is not present in AUTHOR,
+     MySQL blocks the insertion with Error 1452 (foreign key constraint failure).*
+
+[F2.3] Updating Existing Records
+  - Modifying an Author's Details:
+    UPDATE AUTHOR
+    SET name = 'Dr. Taha Hussein', country = 'Egypt'
+    WHERE author_id = 10;
+
+  - Modifying a Book's Information:
+    UPDATE BOOK
+    SET title = 'Al-Ayyam (The Days)', price = 16.00, author_id = 10
+    WHERE book_id = 501;
+
+[F2.4] Deleting a Specific Book
+  - Removing a single book entry without affecting its author:
+    DELETE FROM BOOK WHERE book_id = 501;
+
+[F2.5] Deleting an Author (Triggering Cascade Deletion)
+  - Removing an author and automatically purging all books linked to them:
+    DELETE FROM AUTHOR WHERE author_id = 10;
+    *Result: The row with author_id = 10 is removed from AUTHOR, and every
+     row in BOOK where author_id = 10 is simultaneously deleted by MySQL.*
